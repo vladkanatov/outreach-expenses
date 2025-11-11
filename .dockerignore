@@ -1,0 +1,6 @@
+venv/
+.gitignore
+*__pycache__/
+
+logs/
+*.log
