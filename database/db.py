@@ -16,19 +16,13 @@ async def get_connection():
     return await asyncpg.connect(DATABASE_URL)
 
 async def add_expense(user_id: int, event_name: str, category: str,
-                      description: str, amount: float, date, photo_urls: list[str]):
+                      amount: float, date, photo_urls: list[str]):
     conn = await get_connection()
-    try:
-        await conn.execute("""
-            INSERT INTO expenses (user_id, event_name, category, description, amount, date, photo_urls)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-        """, user_id, event_name, category, description, amount, date, photo_urls)
-        logger.info(f"Расход добавлен в БД: user_id={user_id}, amount={amount}, event={event_name}")
-    except Exception as e:
-        logger.error(f"Ошибка при добавлении расхода в БД: {e}")
-        raise
-    finally:
-        await conn.close()
+    await conn.execute("""
+        INSERT INTO expenses (user_id, event_name, category, amount, date, photo_urls)
+        VALUES ($1, $2, $3, $4, $5, $6)
+    """, user_id, event_name, category, amount, date, photo_urls)
+    await conn.close()
 
 async def list_expenses(limit: int = 5):
     conn = await get_connection()

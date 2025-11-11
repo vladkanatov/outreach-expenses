@@ -2,8 +2,9 @@ from aiogram import Router, types, F
 from aiogram.filters import Command
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from loguru import logger
-from datetime import date
+from datetime import date, datetime
 from database.db import add_expense
 from utils.s3 import upload_file
 import tempfile
@@ -11,24 +12,35 @@ import os
 
 router = Router()
 
+EVENTS = ["ББ", "Киноклуб", "Аутрич", "Настолки"]
+
+
 class NewExpense(StatesGroup):
     event = State()
     category = State()
     amount = State()
-    description = State()
+    date = State()
     photo = State()
 
 @router.message(Command("new"))
 async def start_new_expense(message: types.Message, state: FSMContext):
     logger.info(f"Пользователь {message.from_user.id} начал добавление расхода")
-    await message.answer("Введите название мероприятия:")
+    kb = ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text=e)] for e in EVENTS],
+        resize_keyboard=True,
+        one_time_keyboard=True,
+    )
+    await message.answer("Выберите мероприятие:", reply_markup=kb)
     await state.set_state(NewExpense.event)
 
 @router.message(NewExpense.event)
 async def get_event(message: types.Message, state: FSMContext):
     logger.debug(f"Получено название мероприятия: {message.text}")
+    if message.text not in EVENTS:
+        await message.answer("Неверный выбор. Пожалуйста, выберите мероприятие кнопкой.")
+        return
     await state.update_data(event=message.text)
-    await message.answer("Введите категорию расхода:")
+    await message.answer("Введите категорию расхода:", reply_markup=ReplyKeyboardRemove())
     await state.set_state(NewExpense.category)
 
 @router.message(NewExpense.category)
@@ -48,13 +60,25 @@ async def get_amount(message: types.Message, state: FSMContext):
         await message.answer("Введите сумму числом.")
         return
     await state.update_data(amount=amount)
-    await message.answer("Введите описание:")
-    await state.set_state(NewExpense.description)
+    await message.answer("Введите дату (ГГГГ-ММ-ДД или ДД.MM.ГГГГ):")
+    await state.set_state(NewExpense.date)
 
-@router.message(NewExpense.description)
-async def get_description(message: types.Message, state: FSMContext):
-    logger.debug(f"Получено описание: {message.text[:50]}...")
-    await state.update_data(description=message.text)
+@router.message(NewExpense.date)
+async def get_date(message: types.Message, state: FSMContext):
+    logger.debug(f"Получена дата: {message.text}")
+    text = message.text.strip()
+    parsed = None
+    for fmt in ("%Y-%m-%d", "%d.%m.%Y"):
+        try:
+            parsed = datetime.strptime(text, fmt).date()
+            break
+        except Exception:
+            continue
+    if parsed is None:
+        logger.warning(f"Неверный формат даты от пользователя {message.from_user.id}: {message.text}")
+        await message.answer("Неверный формат даты. Введите в формате ГГГГ-ММ-ДД или ДД.MM.ГГГГ")
+        return
+    await state.update_data(date=parsed)
     await message.answer("Пришлите фото (или /skip если нет):")
     await state.set_state(NewExpense.photo)
 
@@ -97,9 +121,8 @@ async def save_expense(message: types.Message, state: FSMContext):
             user_id=message.from_user.id,
             event_name=data["event"],
             category=data["category"],
-            description=data["description"],
             amount=data["amount"],
-            date=date.today(),
+            date=data["date"],
             photo_urls=data["photo_urls"],
         )
         logger.success(
