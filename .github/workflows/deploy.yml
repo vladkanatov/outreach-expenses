@@ -2,9 +2,8 @@ name: Deploy
 
 on:
   push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
+    tags: ['v*']
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -54,7 +53,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     
     steps:
     - name: Checkout
@@ -63,12 +62,19 @@ jobs:
     - name: Set environment
       id: setenv
       run: |
-        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+        # If this is a tag (release), treat as production
+        if [[ "${{ github.ref }}" == refs/tags/* ]]; then
           echo "ENV=production" >> $GITHUB_OUTPUT
           echo "VALUES_FILE=values-production.yaml" >> $GITHUB_OUTPUT
+          echo "NAMESPACE=outreach" >> $GITHUB_OUTPUT
+        elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          echo "ENV=production" >> $GITHUB_OUTPUT
+          echo "VALUES_FILE=values-production.yaml" >> $GITHUB_OUTPUT
+          echo "NAMESPACE=outreach" >> $GITHUB_OUTPUT
         else
           echo "ENV=dev" >> $GITHUB_OUTPUT
           echo "VALUES_FILE=values-dev.yaml" >> $GITHUB_OUTPUT
+          echo "NAMESPACE=outreach-dev" >> $GITHUB_OUTPUT
         fi
 
     - name: Install Helm
@@ -94,7 +100,7 @@ jobs:
           --set env.AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
           --set env.AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
           --set postgresql.auth.password=${{ secrets.POSTGRES_PASSWORD }} \
-          --namespace outreach-expenses-${{ steps.setenv.outputs.ENV }} \
+          --namespace ${{ steps.setenv.outputs.NAMESPACE }} \
           --create-namespace \
           --wait \
           --timeout 5m

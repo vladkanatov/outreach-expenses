@@ -1,5 +1,7 @@
 replicaCount: 1
 
+namespace: outreach
+
 image:
   repository: ghcr.io/vladkanatov/outreach-expenses
   pullPolicy: IfNotPresent
