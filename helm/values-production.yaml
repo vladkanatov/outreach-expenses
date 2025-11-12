@@ -21,5 +21,5 @@ resources:
 
 env:
   BOT_TOKEN: ""  # set via GitHub secrets
-  AWS_REGION: "us-east-1"
+  AWS_REGION: "ru-central1-a"
   S3_BUCKET: "outreach-expenses-prod"

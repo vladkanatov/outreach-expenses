@@ -12,6 +12,8 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      IMAGE_TAG: ${{ steps.set-image.outputs.image_tag }}
     permissions:
       contents: read
       packages: write
@@ -19,6 +21,18 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+
+    - name: Set image tag
+      id: set-image
+      run: |
+        # If triggered by a tag, use the tag name as image tag, otherwise use branch-ref and short SHA
+        if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+          echo "image_tag=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+        else
+          SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-8)
+          SAFE_REF=${GITHUB_REF_NAME//[^a-zA-Z0-9._-]/-}
+          echo "image_tag=${SAFE_REF}-${SHORT_SHA}" >> $GITHUB_OUTPUT
+        fi
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -45,10 +59,15 @@ jobs:
       with:
         context: .
         push: true
-        tags: ${{ steps.meta.outputs.tags }}
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.set-image.outputs.image_tag }}
         labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+        cache-from: |
+          type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
+          type=gha
+        cache-to: |
+          type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
+          type=gha,mode=max
+        outputs: type=registry
 
   deploy:
     needs: build
@@ -95,7 +114,7 @@ jobs:
         helm upgrade --install outreach-expenses \
           ./helm/outreach-expenses \
           -f ./helm/${{ steps.setenv.outputs.VALUES_FILE }} \
-          --set image.tag=${{ github.ref_name }}-${{ github.sha }} \
+          --set image.tag=${{ needs.build.outputs.IMAGE_TAG }} \
           --set env.BOT_TOKEN=${{ secrets.BOT_TOKEN }} \
           --set env.AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
           --set env.AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
