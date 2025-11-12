@@ -6,7 +6,7 @@ metadata:
   labels:
     {{- include "outreach-expenses.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: 1
   selector:
     matchLabels:
       {{- include "outreach-expenses.selectorLabels" . | nindent 6 }}
