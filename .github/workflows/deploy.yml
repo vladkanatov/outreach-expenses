@@ -115,6 +115,7 @@ jobs:
           ./helm/outreach-expenses \
           -f ./helm/${{ steps.setenv.outputs.VALUES_FILE }} \
           --set image.tag=${{ needs.build.outputs.IMAGE_TAG }} \
+          --set namespace=${{ steps.setenv.outputs.NAMESPACE }} \
           --set env.BOT_TOKEN=${{ secrets.BOT_TOKEN }} \
           --set env.AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
           --set env.AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \

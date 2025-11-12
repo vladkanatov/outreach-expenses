@@ -2,6 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: {{ include "outreach-expenses.fullname" . }}-migration-{{ .Release.Revision }}
+  namespace: {{ .Values.namespace }}
   labels:
     {{- include "outreach-expenses.labels" . | nindent 4 }}
   annotations:
