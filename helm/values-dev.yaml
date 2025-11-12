@@ -1,0 +1,12 @@
+# Development environment values
+image:
+  tag: "dev"
+
+postgresql:
+  auth:
+    password: "dev_password"
+
+env:
+  BOT_TOKEN: ""  # set via GitHub secrets
+  AWS_REGION: "us-east-1"
+  S3_BUCKET: "outreach-expenses-dev"

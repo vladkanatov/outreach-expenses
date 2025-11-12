@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "outreach-expenses.fullname" . }}
+  labels:
+    {{- include "outreach-expenses.labels" . | nindent 4 }}
+data:
+  AWS_REGION: {{ .Values.env.AWS_REGION | quote }}
+  DATABASE_URL: {{ .Values.env.DATABASE_URL | quote }}

@@ -1,0 +1,25 @@
+# Production environment values
+replicaCount: 2
+
+image:
+  tag: "latest"
+
+postgresql:
+  auth:
+    password: ""  # set via GitHub secrets
+  primary:
+    persistence:
+      size: 5Gi
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 200m
+    memory: 256Mi
+
+env:
+  BOT_TOKEN: ""  # set via GitHub secrets
+  AWS_REGION: "us-east-1"
+  S3_BUCKET: "outreach-expenses-prod"

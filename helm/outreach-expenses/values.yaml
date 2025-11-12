@@ -1,0 +1,37 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/vladkanatov/outreach-expenses
+  pullPolicy: IfNotPresent
+  tag: ""  # defaults to appVersion
+
+postgresql:
+  enabled: true
+  auth:
+    username: postgres
+    password: postgres
+    database: expenses_db
+  primary:
+    persistence:
+      enabled: true
+      size: 1Gi
+
+env:
+  BOT_TOKEN: ""
+  DATABASE_URL: "postgresql://postgres:postgres@outreach-expenses-postgresql:5432/expenses_db"
+  AWS_ACCESS_KEY_ID: ""
+  AWS_SECRET_ACCESS_KEY: ""
+  AWS_REGION: "us-east-1"
+  S3_BUCKET: ""
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

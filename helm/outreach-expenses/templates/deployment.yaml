@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "outreach-expenses.fullname" . }}
+  labels:
+    {{- include "outreach-expenses.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "outreach-expenses.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "outreach-expenses.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: bot
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command: ["python", "bot.py"]
+        envFrom:
+        - configMapRef:
+            name: {{ include "outreach-expenses.fullname" . }}
+        - secretRef:
+            name: {{ include "outreach-expenses.fullname" . }}
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
