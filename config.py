@@ -12,3 +12,6 @@ S3_BUCKET = config("S3_BUCKET")
 S3_ACCESS_KEY_ID = config("S3_ACCESS_KEY_ID")
 S3_SECRET_ACCESS_KEY = config("S3_SECRET_ACCESS_KEY")
 S3_REGION = config("S3_REGION", default="ru-central1")
+
+# ID чата для уведомлений о новых чеках
+NOTIFICATION_CHAT_ID = config("NOTIFICATION_CHAT_ID", default="772343631", cast=int)

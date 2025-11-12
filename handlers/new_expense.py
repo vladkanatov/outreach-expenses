@@ -7,6 +7,7 @@ from loguru import logger
 from datetime import date, datetime
 from database.db import add_expense
 from utils.s3 import upload_file
+from utils.notifications import send_expense_notification
 import tempfile
 import os
 
@@ -129,6 +130,19 @@ async def save_expense(message: types.Message, state: FSMContext):
             f"Расход сохранён: user={message.from_user.id}, "
             f"event={data['event']}, amount={data['amount']}"
         )
+        
+        # Отправляем уведомление
+        username = message.from_user.username or message.from_user.full_name or "Неизвестный"
+        await send_expense_notification(
+            user_id=message.from_user.id,
+            username=username,
+            event_name=data["event"],
+            category=data["category"],
+            amount=data["amount"],
+            expense_date=data["date"],
+            has_photo=len(data["photo_urls"]) > 0
+        )
+        
         await message.answer("✅ Расход сохранён!")
     except Exception as e:
         logger.error(f"Ошибка сохранения расхода: {e}")
