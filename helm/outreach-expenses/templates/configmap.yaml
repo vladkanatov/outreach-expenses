@@ -11,4 +11,3 @@ metadata:
     "helm.sh/hook-delete-policy": before-hook-creation
 data:
   AWS_REGION: {{ .Values.env.AWS_REGION | quote }}
-  DATABASE_URL: {{ .Values.env.DATABASE_URL | quote }}
